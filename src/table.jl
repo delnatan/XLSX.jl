@@ -183,6 +183,57 @@ function eachtablerow(sheet::Worksheet; first_row::Union{Nothing, Int}=nothing, 
     error("Couldn't find a table in sheet $(sheet.name)")
 end
 
+"""
+eachtablerow for discontinuous columns
+
+Discontinuous columns are given as an array of column ranges
+
+"""
+function eachtablerow(sheet::Worksheet, multicolumns::Array{ColumnRange, 1}; first_row::Union{Nothing, Int}=nothing, column_labels=nothing, header::Bool=true, stop_in_empty_row::Bool=true, stop_in_row_function::Union{Nothing, Function}=nothing) :: TableRowIterator
+
+    if first_row == nothing
+        first_row_arr = [_find_first_row_with_data(sheet, columnrange.start) for columnrange in multicolumns]
+        # get the smallest row index that has data
+        first_row = min(first_row_arr...)
+    end
+
+    itr = eachrow(sheet)
+
+    columnindices = Array{Int,1}()
+    columnsymbols = Array{Symbol,1}()
+
+    for columnrange in multicolumns
+        push!(columnindices, collect(columnrange.start:columnrange.stop)...)
+        push!(columnsymbols, [Symbol(c) for c in columnrange]...)
+    end
+
+    if column_labels == nothing
+        column_labels = Vector{Symbol}()
+        if header
+            # will use getdata to get column names
+            for column_index in columnindices
+                sheet_row = find_row(itr, first_row)
+                cell = getcell(sheet_row, column_index)
+                @assert !isempty(cell) "Header cell can't be empty ($(cell.ref))."
+                push!(column_labels, Symbol(getdata(sheet, cell)))
+            end
+        else
+            # generate column_labels if there's no header information anywhere
+            for c in columnsymbols
+                push!(column_labels, Symbol(c))
+            end
+        end
+    else
+        # check consistency for column_range and column_labels
+        @assert length(column_labels) == length(columnindices) "`column_range` (length=$(length(columnindices))) and `column_labels` (length=$(length(column_labels))) must have the same length."
+    end
+
+    first_data_row = header ? first_row + 1 : first_row
+    return TableRowIterator(sheet, Index(columnindices, column_labels), first_data_row, stop_in_empty_row, stop_in_row_function)
+end
+
+
+
 function _find_first_row_with_data(sheet::Worksheet, column_number::Int)
     # will find first_row
     for r in eachrow(sheet)
@@ -518,5 +569,10 @@ end
 
 function gettable(sheet::Worksheet; first_row::Union{Nothing, Int}=nothing, column_labels=nothing, header::Bool=true, infer_eltypes::Bool=false, stop_in_empty_row::Bool=true, stop_in_row_function::Union{Function, Nothing}=nothing)
     itr = eachtablerow(sheet; first_row=first_row, column_labels=column_labels, header=header, stop_in_empty_row=stop_in_empty_row, stop_in_row_function=stop_in_row_function)
+    return gettable(itr; infer_eltypes=infer_eltypes)
+end
+
+function gettable(sheet::Worksheet, multicols::Array{ColumnRange, 1}; first_row::Union{Nothing, Int}=nothing, column_labels=nothing, header::Bool=true, infer_eltypes::Bool=false, stop_in_empty_row::Bool=true, stop_in_row_function::Union{Function, Nothing}=nothing)
+    itr = eachtablerow(sheet, multicols; first_row=first_row, column_labels=column_labels, header=header, stop_in_empty_row=stop_in_empty_row, stop_in_row_function=stop_in_row_function)
     return gettable(itr; infer_eltypes=infer_eltypes)
 end

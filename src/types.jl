@@ -289,6 +289,22 @@ struct Index # based on DataFrames.jl
         end
         return new(lookup, column_labels_as_syms, column_map)
     end
+
+    function Index(multicolumn_indices::Array{Int,1}, column_labels)
+        column_labels_as_syms = [ Symbol(i) for i in column_labels ]
+        @assert (length(unique(column_labels_as_syms)) == length(column_labels_as_syms)) "Column labels must be unique."
+        lookup = Dict{Symbol, Int}()
+        for (i, n) in enumerate(column_labels_as_syms)
+            lookup[n] = i
+        end
+
+        column_map = Dict{Int, Int}()
+        for (i, n) in enumerate(multicolumn_indices)
+            column_map[i] = n
+        end
+        return new(lookup, column_labels_as_syms, column_map)        
+    end
+    
 end
 
 struct TableRowIterator{I<:SheetRowIterator}

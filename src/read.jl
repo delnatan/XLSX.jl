@@ -582,3 +582,15 @@ function readtable(filepath::AbstractString, sheet::Union{AbstractString, Int}, 
     end
     return c
 end
+
+function readtable(filepath::AbstractString, sheet::Union{AbstractString, Int}, multicolumns::Array{ColumnRange, 1}; first_row::Union{Nothing, Int} = nothing, column_labels=nothing, header::Bool=true, infer_eltypes::Bool=false, stop_in_empty_row::Bool=true, stop_in_row_function::Union{Nothing, Function}=nothing, enable_cache::Bool=false)
+    c = openxlsx(filepath, enable_cache=enable_cache) do xf
+        gettable(getsheet(xf, sheet), multicolumns; first_row=first_row, column_labels=column_labels, header=header, infer_eltypes=infer_eltypes, stop_in_empty_row=stop_in_empty_row, stop_in_row_function=stop_in_row_function)
+    end
+    return c
+end
+
+function multicolumn_range(str::AbstractString)::Array{ColumnRange, 1}
+    return [ColumnRange(cr) for cr in split(str, ",")]
+end
+
