@@ -3,3 +3,6 @@ docs/build/*
 **/*.swp
 Manifest.toml
 docs/Manifest.toml
+**/.vscode
+**/.gitignore
+

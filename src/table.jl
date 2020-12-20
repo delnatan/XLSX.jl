@@ -237,7 +237,6 @@ function eachtablerow(sheet::Worksheet, multicolumns::Array{ColumnRange, 1}; fir
 end
 
 
-
 function _find_first_row_with_data(sheet::Worksheet, column_number::Int)
     # will find first_row
     for r in eachrow(sheet)
