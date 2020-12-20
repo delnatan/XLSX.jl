@@ -207,7 +207,7 @@ function eachtablerow(sheet::Worksheet, multicolumns::Array{ColumnRange, 1}; fir
         push!(columnsymbols, [Symbol(c) for c in columnrange]...)
     end
 
-    if column_labels == nothing
+    if column_labels === nothing
         column_labels = Vector{Symbol}()
         if header
             # will use getdata to get column names
@@ -217,6 +217,10 @@ function eachtablerow(sheet::Worksheet, multicolumns::Array{ColumnRange, 1}; fir
                 @assert !isempty(cell) "Header cell can't be empty ($(cell.ref))."
                 push!(column_labels, Symbol(getdata(sheet, cell)))
             end
+
+            # generate unique header names (if there were duplicates)
+            column_labels = ensure_unique(column_labels)            
+
         else
             # generate column_labels if there's no header information anywhere
             for c in columnsymbols
@@ -575,4 +579,28 @@ end
 function gettable(sheet::Worksheet, multicols::Array{ColumnRange, 1}; first_row::Union{Nothing, Int}=nothing, column_labels=nothing, header::Bool=true, infer_eltypes::Bool=false, stop_in_empty_row::Bool=true, stop_in_row_function::Union{Function, Nothing}=nothing)
     itr = eachtablerow(sheet, multicols; first_row=first_row, column_labels=column_labels, header=header, stop_in_empty_row=stop_in_empty_row, stop_in_row_function=stop_in_row_function)
     return gettable(itr; infer_eltypes=infer_eltypes)
+end
+
+function ensure_unique(headerlist::Vector{Symbol, 1}) :: Vector{Symbol, 1}
+
+    uniqued = Vector{Symbol,1}()
+    headercount = Dict{Symbol, Int}()
+
+    for header in headerlist
+        # if header is already in the list
+        if header in keys(headercount)
+            # then increment counter
+            headercount[header] += 1
+            # append a post-fix to the header
+            push!(uniqued, Symbol(string(header) * "_" * string(headercount[header])))
+        else
+            # first time seeing the header
+            headercount[header] = 1
+            # add to the 'unique' list
+            push!(uniqued, header)
+        end
+    end
+
+    return uniqued
+
 end
