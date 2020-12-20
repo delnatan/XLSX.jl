@@ -237,7 +237,6 @@ function eachtablerow(sheet::Worksheet, multicolumns::Array{ColumnRange, 1}; fir
 end
 
 
-
 function _find_first_row_with_data(sheet::Worksheet, column_number::Int)
     # will find first_row
     for r in eachrow(sheet)
@@ -581,9 +580,9 @@ function gettable(sheet::Worksheet, multicols::Array{ColumnRange, 1}; first_row:
     return gettable(itr; infer_eltypes=infer_eltypes)
 end
 
-function ensure_unique(headerlist::Vector{Symbol, 1}) :: Vector{Symbol, 1}
+function ensure_unique(headerlist::Vector{Symbol}) :: Vector{Symbol}
 
-    uniqued = Vector{Symbol,1}()
+    uniqued = Vector{Symbol}()
     headercount = Dict{Symbol, Int}()
 
     for header in headerlist
